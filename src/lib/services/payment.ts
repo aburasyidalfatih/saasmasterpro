@@ -2,12 +2,32 @@ import crypto from "crypto"
 import { db } from "@/lib/db"
 import { logger } from "@/lib/logger"
 
-const TRIPAY_API_URL = process.env.TRIPAY_API_URL || "https://tripay.co.id/api-sandbox"
-const TRIPAY_API_KEY = process.env.TRIPAY_API_KEY || ""
-const TRIPAY_PRIVATE_KEY = process.env.TRIPAY_PRIVATE_KEY || ""
-const TRIPAY_MERCHANT_CODE = process.env.TRIPAY_MERCHANT_CODE || ""
 const MAX_RETRY = 3
-const RETRY_DELAY_MS = [1000, 5000, 15000] // exponential-ish backoff
+const RETRY_DELAY_MS = [1000, 5000, 15000]
+
+// Ambil config Tripay: cek tenant dulu, fallback ke platform default
+async function getTripayConfig(tenantId: string) {
+  const tenant = await db.tenant.findUnique({
+    where: { id: tenantId },
+    select: { settings: true },
+  })
+  const settings = tenant?.settings ? JSON.parse(tenant.settings) : {}
+  if (settings.tripay?.tripayApiKey && settings.tripay?.tripayMerchantCode) {
+    return {
+      apiUrl: settings.tripay.tripayApiUrl || "https://tripay.co.id/api-sandbox",
+      apiKey: settings.tripay.tripayApiKey,
+      privateKey: settings.tripay.tripayPrivateKey || "",
+      merchantCode: settings.tripay.tripayMerchantCode,
+    }
+  }
+  // Fallback ke platform default
+  return {
+    apiUrl: process.env.TRIPAY_API_URL || "https://tripay.co.id/api-sandbox",
+    apiKey: process.env.TRIPAY_API_KEY || "",
+    privateKey: process.env.TRIPAY_PRIVATE_KEY || "",
+    merchantCode: process.env.TRIPAY_MERCHANT_CODE || "",
+  }
+}
 
 interface CreateTransactionParams {
   tenantId: string
@@ -19,20 +39,29 @@ interface CreateTransactionParams {
   customerPhone?: string
 }
 
-export async function getPaymentChannels() {
-  const response = await fetch(`${TRIPAY_API_URL}/merchant/payment-channel`, {
-    headers: { Authorization: `Bearer ${TRIPAY_API_KEY}` },
+export async function getPaymentChannels(tenantId?: string) {
+  const cfg = tenantId
+    ? await getTripayConfig(tenantId)
+    : {
+        apiUrl: process.env.TRIPAY_API_URL || "https://tripay.co.id/api-sandbox",
+        apiKey: process.env.TRIPAY_API_KEY || "",
+        privateKey: process.env.TRIPAY_PRIVATE_KEY || "",
+        merchantCode: process.env.TRIPAY_MERCHANT_CODE || "",
+      }
+  const response = await fetch(`${cfg.apiUrl}/merchant/payment-channel`, {
+    headers: { Authorization: `Bearer ${cfg.apiKey}` },
   })
   const data = await response.json()
   return data.data || []
 }
 
 export async function createTransaction(params: CreateTransactionParams) {
+  const cfg = await getTripayConfig(params.tenantId)
   const merchantRef = `INV-${Date.now()}`
 
   const signature = crypto
-    .createHmac("sha256", TRIPAY_PRIVATE_KEY)
-    .update(TRIPAY_MERCHANT_CODE + merchantRef + params.amount)
+    .createHmac("sha256", cfg.privateKey)
+    .update(cfg.merchantCode + merchantRef + params.amount)
     .digest("hex")
 
   const payload = {
@@ -52,11 +81,11 @@ export async function createTransaction(params: CreateTransactionParams) {
     signature,
   }
 
-  const response = await fetch(`${TRIPAY_API_URL}/transaction/create`, {
+  const response = await fetch(`${cfg.apiUrl}/transaction/create`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${TRIPAY_API_KEY}`,
+      Authorization: `Bearer ${cfg.apiKey}`,
     },
     body: JSON.stringify(payload),
   })

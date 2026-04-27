@@ -159,6 +159,7 @@ function getTenantMenu(basePath: string): MenuSection[] {
             { label: "Tampilan & Tema", href: `${basePath}/settings/appearance`, icon: Palette },
             { label: "Email (SMTP)", href: `${basePath}/settings/email`, icon: Mail },
             { label: "WhatsApp Gateway", href: `${basePath}/settings/whatsapp`, icon: Megaphone },
+            { label: "Payment Gateway", href: `${basePath}/settings/payment`, icon: CreditCard },
             { label: "Keamanan", href: `${basePath}/settings/security`, icon: Lock },
           ],
         },
