@@ -4,16 +4,28 @@ import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "@/lib/utils"
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center whitespace-nowrap rounded-xl text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
+  "inline-flex items-center justify-center whitespace-nowrap rounded-xl text-sm font-medium ring-offset-background transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 active:scale-[0.98]",
   {
     variants: {
       variant: {
-        default: "bg-primary text-primary-foreground hover:bg-primary/90",
-        destructive: "bg-destructive text-destructive-foreground hover:bg-destructive/90",
-        outline: "border border-input bg-background hover:bg-accent hover:text-accent-foreground",
-        secondary: "bg-secondary text-secondary-foreground hover:bg-secondary/80",
-        ghost: "hover:bg-accent hover:text-accent-foreground",
-        link: "text-primary underline-offset-4 hover:underline",
+        // Default — solid primary, sedikit lebih soft dari sebelumnya
+        default:
+          "bg-primary/90 text-primary-foreground shadow-sm hover:bg-primary hover:shadow-md",
+        // Destructive — merah lebih soft
+        destructive:
+          "bg-destructive/85 text-destructive-foreground shadow-sm hover:bg-destructive/95 hover:shadow-md",
+        // Outline — border tipis, hover subtle
+        outline:
+          "border border-input bg-background/80 shadow-sm hover:bg-accent hover:text-accent-foreground hover:border-primary/30",
+        // Secondary — muted background, tidak mencolok
+        secondary:
+          "bg-secondary/80 text-secondary-foreground shadow-sm hover:bg-secondary",
+        // Ghost — transparan, hover sangat subtle
+        ghost:
+          "hover:bg-accent/60 hover:text-accent-foreground",
+        // Link — text only
+        link:
+          "text-primary underline-offset-4 hover:underline",
       },
       size: {
         default: "h-10 px-4 py-2",
