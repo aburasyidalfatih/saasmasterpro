@@ -37,7 +37,10 @@ export default function AppearancePage() {
 
   const activeTenant = session?.user?.tenants?.find((t) => t.id === activeTenantId) || session?.user?.tenants?.[0]
   const isImpersonating = typeof document !== "undefined" && document.cookie.includes("impersonate-tenant=")
-  const canChangeTheme = activeTenant?.role === "owner" || activeTenant?.role === "admin" || session?.user?.isSuperAdmin || isImpersonating
+  // Super admin murni (tidak impersonate) TIDAK bisa ubah tema tenant
+  // Hanya owner/admin tenant yang bisa ubah tema dashboard mereka
+  const canChangeTheme = activeTenant?.role === "owner" || activeTenant?.role === "admin" || isImpersonating
+  const isSuperAdminOnly = session?.user?.isSuperAdmin && !isImpersonating
 
   const handleSave = async () => {
     setSaving(true)
@@ -131,9 +134,11 @@ export default function AppearancePage() {
             <div className="text-sm">
               <p className="font-medium">Tema berlaku untuk seluruh organisasi</p>
               <p className="text-muted-foreground mt-0.5">
-                {canChangeTheme
-                  ? "Pilih tema lalu klik \"Simpan Tema\" untuk menerapkan ke semua pengguna."
-                  : "Hanya Owner dan Admin yang dapat mengubah tema."}
+                {isSuperAdminOnly
+                  ? "Anda login sebagai Super Admin. Untuk mengubah tema tenant, gunakan fitur \"Login Sebagai\" dari halaman Tenant."
+                  : canChangeTheme
+                  ? "Pilih tema lalu klik \"Simpan Tema\" untuk menerapkan ke semua pengguna di organisasi ini."
+                  : "Hanya Owner dan Admin yang dapat mengubah tema organisasi."}
               </p>
             </div>
           </CardContent>

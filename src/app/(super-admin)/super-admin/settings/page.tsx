@@ -119,11 +119,12 @@ export default function SuperAdminSettingsPage() {
           <CardContent className="space-y-3">
             {[
               { label: "Versi", value: "1.0.0" },
-              { label: "Framework", value: "Next.js 14" },
-              { label: "Database", value: "SQLite (dev)" },
+              { label: "Framework", value: "Next.js 16.2" },
+              { label: "Auth", value: "Auth.js v5" },
+              { label: "Database", value: "SQLite (dev) / PostgreSQL (prod)" },
               { label: "Payment", value: "Tripay" },
               { label: "WhatsApp", value: "StarSender" },
-              { label: "Email", value: "Mailketing" },
+              { label: "Email", value: "Nodemailer SMTP" },
             ].map((item) => (
               <div key={item.label} className="flex items-center justify-between rounded-lg bg-muted/30 px-4 py-2.5">
                 <span className="text-sm text-muted-foreground">{item.label}</span>

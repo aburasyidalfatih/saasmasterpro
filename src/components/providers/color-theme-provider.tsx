@@ -45,8 +45,21 @@ export function ColorThemeProvider({ children }: { children: React.ReactNode }) 
   const [resolvedTenantId, setResolvedTenantId] = useState<string | null>(null)
   const lastFetchedRef = useRef<string | null>(null)
 
+  // Detect if we're in super admin panel (not impersonating)
+  const isSuperAdminPanel = typeof window !== "undefined" && window.location.pathname.startsWith("/super-admin")
+  const isImpersonating = typeof document !== "undefined" && document.cookie.includes("impersonate-tenant=")
+  const isSuperAdminOnly = session?.user?.isSuperAdmin && !isImpersonating
+
   // Resolve tenant ID from session OR impersonate cookie
   useEffect(() => {
+    // Super admin not impersonating → no tenant theme, use default
+    if (isSuperAdminOnly) {
+      setSavedTheme(defaultThemeId)
+      setPreviewTheme(defaultThemeId)
+      applyThemeToDOM(defaultThemeId)
+      return
+    }
+
     const sessionTenantId = session?.user?.tenants?.[0]?.id
 
     if (sessionTenantId) {
@@ -64,7 +77,7 @@ export function ColorThemeProvider({ children }: { children: React.ReactNode }) 
         })
         .catch(() => {})
     }
-  }, [session?.user?.tenants])
+  }, [session?.user?.tenants, isSuperAdminOnly])
 
   // Fetch theme from database when tenantId is resolved
   useEffect(() => {
