@@ -11,8 +11,8 @@ const websiteSchema = z.object({
   tagline: z.string().max(200).optional().nullable(),
   description: z.string().max(1000).optional().nullable(),
   about: z.string().max(5000).optional().nullable(),
-  logo: z.string().url().optional().nullable(),
-  heroImage: z.string().url().optional().nullable(),
+  logo: z.string().max(500).optional().nullable(),
+  heroImage: z.string().max(500).optional().nullable(),
   // Kontak
   address: z.string().max(300).optional().nullable(),
   phone: z.string().max(30).optional().nullable(),
@@ -24,8 +24,8 @@ const websiteSchema = z.object({
   facebook: z.string().max(100).optional().nullable(),
   youtube: z.string().max(100).optional().nullable(),
   // Konten JSON
-  services: z.string().optional().nullable(), // JSON string
-  gallery: z.string().optional().nullable(),  // JSON string
+  services: z.any().optional().nullable(), // Native Json
+  gallery: z.any().optional().nullable(),  // Native Json
 })
 
 // GET: ambil data website tenant
@@ -49,11 +49,8 @@ export async function GET(req: Request) {
 
   if (!tenant) return NextResponse.json({ error: "Tenant tidak ditemukan" }, { status: 404 })
 
-  return NextResponse.json({
-    ...tenant,
-    services: tenant.services ? JSON.parse(tenant.services) : [],
-    gallery: tenant.gallery ? JSON.parse(tenant.gallery) : [],
-  })
+  // Native Json fields — Prisma returns parsed objects directly
+  return NextResponse.json(tenant)
 }
 
 // PUT: update data website tenant

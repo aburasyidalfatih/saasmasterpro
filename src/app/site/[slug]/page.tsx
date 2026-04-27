@@ -48,8 +48,8 @@ export default async function SitePage({
 
   if (!tenant) notFound()
 
-  const services: string[] = tenant.services ? JSON.parse(tenant.services) : []
-  const gallery: string[] = tenant.gallery ? JSON.parse(tenant.gallery) : []
+  const services = (tenant.services as string[]) || []
+  const gallery = (tenant.gallery as string[]) || []
 
   const base = `/site/${slug}`
 

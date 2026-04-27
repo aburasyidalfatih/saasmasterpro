@@ -1,0 +1,11 @@
+User-agent: *
+Allow: /
+
+# Protect dashboard and admin routes from indexing
+Disallow: /dashboard
+Disallow: /super-admin
+Disallow: /api/
+Disallow: /login
+Disallow: /register
+
+Sitemap: /sitemap.xml

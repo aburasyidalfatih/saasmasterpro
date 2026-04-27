@@ -30,7 +30,7 @@ describe("Audit Service", () => {
         action: "create",
         entity: "user",
         entityId: "user-2",
-        oldData: null,
+        oldData: undefined,
         newData: { name: "New User" },
         ipAddress: "127.0.0.1",
         userAgent: "Mozilla/5.0",
@@ -43,7 +43,7 @@ describe("Audit Service", () => {
           action: "create",
           entity: "user",
           entityId: "user-2",
-          newData: JSON.stringify({ name: "New User" }),
+          newData: { name: "New User" },
           ipAddress: "127.0.0.1",
         }),
       })

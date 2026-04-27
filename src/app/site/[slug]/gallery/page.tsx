@@ -10,7 +10,7 @@ export default async function GalleryPage({ params }: { params: Promise<{ slug: 
   })
   if (!tenant) notFound()
 
-  const gallery: string[] = tenant.gallery ? JSON.parse(tenant.gallery) : []
+  const gallery = (tenant.gallery as string[]) || []
 
   return (
     <>

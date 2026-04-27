@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -19,11 +19,11 @@ model Tenant {
   plan        String   @default("free")
   theme       String   @default("aurora")
   isActive    Boolean  @default(true)
-  settings    String?  // JSON string untuk settings tenant
+  settings    Json?    // Tenant-specific settings (SMTP, payment, WA gateway)
 
   // Website company profile fields
   tagline     String?
-  about       String?  // Rich text / markdown
+  about       String?  @db.Text // Rich text / markdown
   address     String?
   phone       String?
   email       String?
@@ -32,9 +32,9 @@ model Tenant {
   instagram   String?
   facebook    String?
   youtube     String?
-  services    String?  // JSON array of services
+  services    Json?    // JSON array of services
   heroImage   String?
-  gallery     String?  // JSON array of image URLs
+  gallery     Json?    // JSON array of image URLs
 
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -45,6 +45,8 @@ model Tenant {
   payments      Payment[]
   auditLogs     AuditLog[]
 
+  @@index([isActive])
+  @@index([plan])
   @@map("tenants")
 }
 
@@ -60,7 +62,7 @@ model User {
   isSuperAdmin         Boolean   @default(false)
   twoFactorEnabled     Boolean   @default(false)
   twoFactorSecret      String?
-  twoFactorBackupCodes String?   // JSON array of backup codes
+  twoFactorBackupCodes Json?     // JSON array of hashed backup codes
   createdAt            DateTime  @default(now())
   updatedAt            DateTime  @updatedAt
 
@@ -71,6 +73,8 @@ model User {
   sessions             Session[]
   verificationTokens   VerificationToken[]
 
+  @@index([isActive])
+  @@index([isSuperAdmin])
   @@map("users")
 }
 
@@ -86,6 +90,7 @@ model Session {
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  @@index([userId])
   @@map("sessions")
 }
 
@@ -99,6 +104,7 @@ model TenantUser {
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([tenantId, userId])
+  @@index([userId])
   @@map("tenant_users")
 }
 
@@ -113,6 +119,8 @@ model Invitation {
 
   tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
+  @@index([tenantId])
+  @@index([expiresAt])
   @@map("invitations")
 }
 
@@ -126,6 +134,8 @@ model VerificationToken {
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  @@index([userId])
+  @@index([expiresAt])
   @@map("verification_tokens")
 }
 
@@ -137,16 +147,19 @@ model Notification {
   tenantId  String?
   userId    String
   title     String
-  message   String
+  message   String   @db.Text
   type      String   @default("info") // info, success, warning, error
   channel   String   @default("inapp") // inapp, email, whatsapp
   isRead    Boolean  @default(false)
-  metadata  String?  // JSON string
+  metadata  Json?    // Additional notification metadata
   createdAt DateTime @default(now())
 
   tenant Tenant? @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  @@index([userId, isRead])
+  @@index([tenantId])
+  @@index([createdAt])
   @@map("notifications")
 }
 
@@ -175,12 +188,15 @@ model Payment {
   tripayRef     String?
   paidAt        DateTime?
   expiredAt     DateTime?
-  metadata      String?  // JSON string
+  metadata      Json?    // Additional payment metadata
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
   tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
+  @@index([tenantId])
+  @@index([status])
+  @@index([createdAt])
   @@map("payments")
 }
 
@@ -193,8 +209,8 @@ model AuditLog {
   action    String
   entity    String
   entityId  String?
-  oldData   String?  // JSON string
-  newData   String?  // JSON string
+  oldData   Json?    // Previous state snapshot
+  newData   Json?    // New state snapshot
   ipAddress String?
   userAgent String?
   createdAt DateTime @default(now())
@@ -202,6 +218,10 @@ model AuditLog {
   tenant Tenant? @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   user   User?   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  @@index([tenantId])
+  @@index([userId])
+  @@index([entity])
+  @@index([createdAt])
   @@map("audit_logs")
 }
 
@@ -216,6 +236,7 @@ model FileUpload {
   size      Int
   createdAt DateTime @default(now())
 
+  @@index([tenantId])
   @@map("file_uploads")
 }
 
@@ -224,7 +245,7 @@ model FileUpload {
 model PlatformSetting {
   id    String @id @default(cuid())
   key   String @unique
-  value String
+  value String @db.Text
 
   @@map("platform_settings")
 }

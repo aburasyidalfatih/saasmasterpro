@@ -2,6 +2,7 @@ node_modules/
 .next/
 out/
 build/
+coverage/
 *.db
 *.db-journal
 .env
@@ -10,3 +11,4 @@ uploads/
 .DS_Store
 *.tsbuildinfo
 next-env.d.ts
+testsprite_tests/

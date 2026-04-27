@@ -8,6 +8,7 @@ import { Header } from "@/components/layout/header"
 import { Menu, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
+import { TenantBrandingProvider } from "@/components/providers/tenant-branding-provider"
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { data: session, status } = useSession()
@@ -34,6 +35,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   if (!session) return null
 
   return (
+    <TenantBrandingProvider>
     <div className="flex h-screen overflow-hidden">
       {/* Desktop sidebar */}
       <div className="hidden lg:block">
@@ -75,5 +77,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </main>
       </div>
     </div>
+    </TenantBrandingProvider>
   )
 }

@@ -38,10 +38,6 @@ export async function GET(
     return NextResponse.json({ error: "Tidak ditemukan" }, { status: 404 })
   }
 
-  // Parse JSON fields
-  return NextResponse.json({
-    ...tenant,
-    services: tenant.services ? JSON.parse(tenant.services) : [],
-    gallery: tenant.gallery ? JSON.parse(tenant.gallery) : [],
-  })
+  // Native Json fields — Prisma returns parsed objects directly
+  return NextResponse.json(tenant)
 }

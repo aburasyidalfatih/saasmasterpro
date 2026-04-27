@@ -1,5 +1,7 @@
 import * as OTPAuth from "otpauth"
 import QRCode from "qrcode"
+import crypto from "crypto"
+import bcrypt from "bcryptjs"
 import { db } from "@/lib/db"
 
 const APP_NAME = "SaasMasterPro"
@@ -65,19 +67,25 @@ export async function enableTwoFactor(userId: string, code: string) {
     throw new Error("Kode OTP tidak valid")
   }
 
-  // Generate backup codes
+  // Generate backup codes using crypto for better entropy
   const backupCodes = Array.from({ length: 8 }, () =>
-    Math.random().toString(36).substring(2, 8).toUpperCase()
+    crypto.randomBytes(4).toString("hex").toUpperCase()
+  )
+
+  // Hash backup codes before storing (plain codes are only shown once to user)
+  const hashedCodes = await Promise.all(
+    backupCodes.map((code) => bcrypt.hash(code, 10))
   )
 
   await db.user.update({
     where: { id: userId },
     data: {
       twoFactorEnabled: true,
-      twoFactorBackupCodes: JSON.stringify(backupCodes),
+      twoFactorBackupCodes: hashedCodes,
     },
   })
 
+  // Return plain codes — this is the only time user sees them
   return { backupCodes }
 }
 
@@ -90,7 +98,7 @@ export async function disableTwoFactor(userId: string) {
     data: {
       twoFactorEnabled: false,
       twoFactorSecret: null,
-      twoFactorBackupCodes: null,
+      twoFactorBackupCodes: null as any,
     },
   })
 }
@@ -114,18 +122,22 @@ export async function verifyTwoFactorLogin(
     return true
   }
 
-  // Try backup code
+  // Try backup code (hashed comparison)
   if (user.twoFactorBackupCodes) {
-    const backupCodes: string[] = JSON.parse(user.twoFactorBackupCodes)
-    const codeIndex = backupCodes.indexOf(code.toUpperCase())
-    if (codeIndex !== -1) {
-      // Consume backup code
-      backupCodes.splice(codeIndex, 1)
-      await db.user.update({
-        where: { id: userId },
-        data: { twoFactorBackupCodes: JSON.stringify(backupCodes) },
-      })
-      return true
+    const hashedCodes = user.twoFactorBackupCodes as string[]
+    const upperCode = code.toUpperCase()
+
+    for (let i = 0; i < hashedCodes.length; i++) {
+      const isMatch = await bcrypt.compare(upperCode, hashedCodes[i])
+      if (isMatch) {
+        // Consume backup code by removing it
+        hashedCodes.splice(i, 1)
+        await db.user.update({
+          where: { id: userId },
+          data: { twoFactorBackupCodes: hashedCodes },
+        })
+        return true
+      }
     }
   }
 

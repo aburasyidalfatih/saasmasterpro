@@ -1,4 +1,5 @@
 import { db } from "@/lib/db"
+import { Prisma } from "@prisma/client"
 
 interface AuditParams {
   tenantId?: string
@@ -6,8 +7,8 @@ interface AuditParams {
   action: string
   entity: string
   entityId?: string
-  oldData?: any
-  newData?: any
+  oldData?: Record<string, unknown>
+  newData?: Record<string, unknown>
   ipAddress?: string
   userAgent?: string
 }
@@ -20,8 +21,8 @@ export async function createAuditLog(params: AuditParams) {
       action: params.action,
       entity: params.entity,
       entityId: params.entityId,
-      oldData: params.oldData ? JSON.stringify(params.oldData) : null,
-      newData: params.newData ? JSON.stringify(params.newData) : null,
+      oldData: params.oldData ? (params.oldData as Prisma.InputJsonValue) : Prisma.DbNull,
+      newData: params.newData ? (params.newData as Prisma.InputJsonValue) : Prisma.DbNull,
       ipAddress: params.ipAddress,
       userAgent: params.userAgent,
     },
@@ -39,7 +40,7 @@ export async function getAuditLogs(params: {
   const limit = params.limit || 20
   const skip = (page - 1) * limit
 
-  const where: any = {}
+  const where: Prisma.AuditLogWhereInput = {}
   if (params.tenantId) where.tenantId = params.tenantId
   if (params.userId) where.userId = params.userId
   if (params.entity) where.entity = params.entity

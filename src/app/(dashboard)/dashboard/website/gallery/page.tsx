@@ -69,7 +69,7 @@ export default function WebsiteGalleryPage() {
     const res = await fetch("/api/tenant/website", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ tenantId, gallery: JSON.stringify(gallery) }),
+      body: JSON.stringify({ tenantId, gallery }),
     })
     setSaving(false)
     if (res.ok) {

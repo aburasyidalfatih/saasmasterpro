@@ -4,8 +4,10 @@ import Google from "next-auth/providers/google"
 import bcrypt from "bcryptjs"
 import { db } from "@/lib/db"
 import { verifyTwoFactorLogin } from "@/lib/services/two-factor"
+import { authConfig } from "@/lib/auth.config"
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
+  ...authConfig,
   session: {
     strategy: "jwt",
   },
@@ -63,6 +65,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             slug: tu.tenant.slug,
             role: tu.role,
             theme: tu.tenant.theme || "aurora",
+            logo: tu.tenant.logo || null,
           })),
         }
       },
@@ -106,17 +109,20 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     async jwt({ token, user, trigger }) {
       if (user) {
         token.id = user.id!
-        token.isSuperAdmin = (user as any).isSuperAdmin || false
-        token.twoFactorEnabled = (user as any).twoFactorEnabled || false
-        token.tenants = (user as any).tenants || []
+        token.isSuperAdmin = user.isSuperAdmin || false
+        token.twoFactorEnabled = user.twoFactorEnabled || false
+        token.tenants = user.tenants || []
       }
-      // Re-fetch tenant data on session update or if tenants empty (OAuth first login)
+      // Re-fetch user + tenant data on session update or if tenants empty (OAuth first login)
       if ((trigger === "update" || (token.id && (!token.tenants || token.tenants.length === 0)))) {
         const freshUser = await db.user.findUnique({
           where: { id: token.id as string },
           include: { tenants: { include: { tenant: true } } },
         })
         if (freshUser) {
+          // Refresh semua data user termasuk name dan avatar
+          token.name = freshUser.name
+          token.picture = freshUser.avatar  // NextAuth menyimpan image di token.picture
           token.isSuperAdmin = freshUser.isSuperAdmin
           token.twoFactorEnabled = freshUser.twoFactorEnabled
           token.tenants = freshUser.tenants.map((tu) => ({
@@ -125,6 +131,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             slug: tu.tenant.slug,
             role: tu.role,
             theme: tu.tenant.theme || "aurora",
+            logo: tu.tenant.logo || null,
           }))
         }
       }
@@ -133,9 +140,12 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     async session({ session, token }) {
       if (session.user) {
         session.user.id = token.id as string
-        ;(session.user as any).isSuperAdmin = token.isSuperAdmin
-        ;(session.user as any).twoFactorEnabled = token.twoFactorEnabled
-        ;(session.user as any).tenants = token.tenants
+        session.user.isSuperAdmin = token.isSuperAdmin as boolean
+        session.user.twoFactorEnabled = token.twoFactorEnabled as boolean
+        session.user.tenants = token.tenants as any[]
+        // Sinkronisasi name dan image dari token (di-refresh saat trigger=update)
+        if (token.name) session.user.name = token.name as string
+        if (token.picture !== undefined) session.user.image = token.picture as string | null
       }
       return session
     },

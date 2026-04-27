@@ -1,0 +1,13 @@
+{
+  "enabled": true,
+  "name": "Baca Dokumen Sebelum Task",
+  "description": "Mengingatkan agen untuk membaca file arsitektur yang relevan sebelum memulai setiap perubahan atau penambahan fitur",
+  "version": "1",
+  "when": {
+    "type": "preTaskExecution"
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "Sebelum memulai task ini, baca file-file yang relevan sesuai kategori perubahan yang akan dilakukan (lihat .kiro/steering/project-rules.md). Minimal baca: prisma/schema.prisma jika menyentuh data, src/lib/api-utils.ts jika membuat API route, src/proxy.ts jika menyentuh auth/routing, dan src/lib/auth.config.ts jika menyentuh session. Setelah membaca, konfirmasi file apa saja yang sudah dibaca sebelum mulai mengerjakan."
+  }
+}

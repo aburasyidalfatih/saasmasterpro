@@ -11,7 +11,7 @@ async function getTripayConfig(tenantId: string) {
     where: { id: tenantId },
     select: { settings: true },
   })
-  const settings = tenant?.settings ? JSON.parse(tenant.settings) : {}
+  const settings = (tenant?.settings as Record<string, any>) || {}
   if (settings.tripay?.tripayApiKey && settings.tripay?.tripayMerchantCode) {
     return {
       apiUrl: settings.tripay.tripayApiUrl || "https://tripay.co.id/api-sandbox",
@@ -109,13 +109,52 @@ export async function createTransaction(params: CreateTransactionParams) {
   return result
 }
 
-export async function handleCallback(body: any) {
+interface TripayCallbackBody {
+  merchant_ref: string
+  status: string
+  signature: string
+  reference?: string
+  total_amount?: number
+  fee_merchant?: number
+  fee_customer?: number
+  payment_method?: string
+  payment_method_code?: string
+  paid_at?: string
+}
+
+/**
+ * Verify Tripay callback signature to ensure authenticity.
+ * Tripay signs callbacks with HMAC SHA256 using the private key.
+ */
+export function verifyCallbackSignature(
+  body: TripayCallbackBody,
+  privateKey: string
+): boolean {
+  const signature = crypto
+    .createHmac("sha256", privateKey)
+    .update(JSON.stringify(body))
+    .digest("hex")
+  return signature === body.signature
+}
+
+export async function handleCallback(body: TripayCallbackBody) {
+  // Step 1: Find the payment by merchant reference
   const payment = await db.payment.findUnique({
     where: { reference: body.merchant_ref },
   })
 
   if (!payment) return null
 
+  // Step 2: Verify callback signature
+  const cfg = await getTripayConfig(payment.tenantId)
+  if (!verifyCallbackSignature(body, cfg.privateKey)) {
+    logger.warn("[payment] Invalid callback signature", {
+      merchantRef: body.merchant_ref,
+    })
+    throw new Error("Invalid callback signature")
+  }
+
+  // Step 3: Update payment status
   const updatedPayment = await db.payment.update({
     where: { id: payment.id },
     data: {
@@ -124,7 +163,7 @@ export async function handleCallback(body: any) {
     },
   })
 
-  // Upgrade tenant plan jika pembayaran berhasil
+  // Step 4: Upgrade tenant plan jika pembayaran berhasil
   if (body.status === "PAID") {
     await retryAsync(
       () => db.tenant.update({

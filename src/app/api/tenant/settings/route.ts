@@ -34,8 +34,8 @@ export async function GET(req: Request) {
     select: { settings: true },
   })
 
-  const parsed = tenant?.settings ? JSON.parse(tenant.settings) : {}
-  return NextResponse.json(parsed)
+  const settings = (tenant?.settings as Record<string, any>) || {}
+  return NextResponse.json(settings)
 }
 
 // PUT: update settings tenant
@@ -63,12 +63,12 @@ export async function PUT(req: Request) {
     where: { id: tenantId },
     select: { settings: true },
   })
-  const existingSettings = existing?.settings ? JSON.parse(existing.settings) : {}
+  const existingSettings = (existing?.settings as Record<string, any>) || {}
   const merged = { ...existingSettings, ...settings }
 
   await db.tenant.update({
     where: { id: tenantId },
-    data: { settings: JSON.stringify(merged) },
+    data: { settings: merged },
   })
 
   return NextResponse.json({ message: "Pengaturan disimpan" })

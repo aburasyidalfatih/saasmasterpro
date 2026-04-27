@@ -21,7 +21,7 @@ export default async function ServicesPage({ params }: { params: Promise<{ slug:
   if (!tenant) notFound()
 
   const services: { title: string; description: string; icon: string }[] =
-    tenant.services ? JSON.parse(tenant.services) : defaultServices
+    (tenant.services as any[]) || defaultServices
   const base = `/site/${slug}`
 
   return (

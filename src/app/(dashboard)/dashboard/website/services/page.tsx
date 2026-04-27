@@ -80,7 +80,7 @@ export default function WebsiteServicesPage() {
     const res = await fetch("/api/tenant/website", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ tenantId, services: JSON.stringify(services) }),
+      body: JSON.stringify({ tenantId, services }),
     })
     setSaving(false)
     if (res.ok) {

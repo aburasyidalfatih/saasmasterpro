@@ -11,7 +11,7 @@ async function getEmailTransporter(tenantId?: string) {
       where: { id: tenantId },
       select: { settings: true },
     })
-    const settings = tenant?.settings ? JSON.parse(tenant.settings) : {}
+    const settings = (tenant?.settings as Record<string, any>) || {}
     if (settings.smtp?.smtpHost && settings.smtp?.smtpUser && settings.smtp?.smtpPass) {
       return {
         transporter: nodemailer.createTransport({
@@ -57,7 +57,7 @@ async function getWaConfig(tenantId?: string) {
       where: { id: tenantId },
       select: { settings: true },
     })
-    const settings = tenant?.settings ? JSON.parse(tenant.settings) : {}
+    const settings = (tenant?.settings as Record<string, any>) || {}
     if (settings.whatsapp?.waApiKey) {
       return {
         apiUrl: settings.whatsapp.waApiUrl || "https://api.starsender.online/api",

@@ -51,6 +51,7 @@ import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { useState } from "react"
 import { useSession } from "next-auth/react"
+import { useTenantBranding } from "@/components/providers/tenant-branding-provider"
 
 // ============================================================
 // MENU DEFINITIONS
@@ -156,6 +157,7 @@ function getTenantMenu(basePath: string): MenuSection[] {
           icon: Settings,
           children: [
             { label: "Umum", href: `${basePath}/settings`, icon: Building2 },
+            { label: "Custom Domain", href: `${basePath}/settings/domain`, icon: Globe },
             { label: "Tampilan & Tema", href: `${basePath}/settings/appearance`, icon: Palette },
             { label: "Email (SMTP)", href: `${basePath}/settings/email`, icon: Mail },
             { label: "WhatsApp Gateway", href: `${basePath}/settings/whatsapp`, icon: Megaphone },
@@ -292,6 +294,7 @@ interface SidebarProps {
 export function Sidebar({ isSuperAdmin }: SidebarProps) {
   const pathname = usePathname()
   const { data: session } = useSession()
+  const { branding } = useTenantBranding()
   const [collapsed, setCollapsed] = useState(false)
   const [openMenus, setOpenMenus] = useState<Record<string, boolean>>({})
 
@@ -303,8 +306,9 @@ export function Sidebar({ isSuperAdmin }: SidebarProps) {
   const currentTenant = session?.user?.tenants?.find((t) => t.slug === currentTenantSlug) || session?.user?.tenants?.[0]
   const currentRole = currentTenant?.role || "member"
 
-  // Nama & inisial branding: nama tenant untuk dashboard, SaasMasterPro untuk super-admin
-  const brandName = isSuperAdminPath ? "SaasMasterPro" : (currentTenant?.name || "SaasMasterPro")
+  // Branding: pakai context (update instan) untuk nama & logo, fallback ke session
+  const brandName = isSuperAdminPath ? "SaasMasterPro" : (branding.name || currentTenant?.name || "SaasMasterPro")
+  const brandLogo = isSuperAdminPath ? null : (branding.logo || (currentTenant as any)?.logo || null)
   const brandInitial = brandName.charAt(0).toUpperCase()
 
   // Saat impersonate, super admin dianggap admin tenant
@@ -358,10 +362,17 @@ export function Sidebar({ isSuperAdmin }: SidebarProps) {
           <>
             <Link href={homeHref} className="flex items-center gap-2.5">
               <div className={cn(
-                "flex h-9 w-9 items-center justify-center rounded-xl text-white font-bold text-sm shadow-lg",
-                isSuperAdminPath ? "bg-gradient-to-br from-red-500 to-orange-500" : "btn-gradient"
+                "flex h-9 w-9 items-center justify-center rounded-xl text-white font-bold text-sm shadow-lg overflow-hidden",
+                isSuperAdminPath
+                  ? "bg-gradient-to-br from-red-500 to-orange-500"
+                  : brandLogo ? "bg-transparent shadow-none" : "btn-gradient"
               )}>
-                {isSuperAdminPath ? "⚡" : brandInitial}
+                {isSuperAdminPath
+                  ? "⚡"
+                  : brandLogo
+                    ? <img src={brandLogo} alt={brandName} className="h-full w-full object-contain" />
+                    : brandInitial
+                }
               </div>
               <div className="flex flex-col min-w-0">
                 <span className="font-bold text-sm tracking-tight leading-tight truncate max-w-[140px]">{brandName}</span>
@@ -381,11 +392,18 @@ export function Sidebar({ isSuperAdmin }: SidebarProps) {
           <button
             onClick={() => setCollapsed(false)}
             className={cn(
-              "flex h-9 w-9 mx-auto items-center justify-center rounded-xl text-white font-bold text-sm shadow-lg hover:opacity-90 transition-opacity",
-              isSuperAdminPath ? "bg-gradient-to-br from-red-500 to-orange-500" : "btn-gradient"
+              "flex h-9 w-9 mx-auto items-center justify-center rounded-xl text-white font-bold text-sm shadow-lg hover:opacity-90 transition-opacity overflow-hidden",
+              isSuperAdminPath
+                ? "bg-gradient-to-br from-red-500 to-orange-500"
+                : brandLogo ? "bg-transparent shadow-none" : "btn-gradient"
             )}
           >
-            {isSuperAdminPath ? "⚡" : brandInitial}
+            {isSuperAdminPath
+              ? "⚡"
+              : brandLogo
+                ? <img src={brandLogo} alt={brandName} className="h-full w-full object-contain" />
+                : brandInitial
+            }
           </button>
         )}
       </div>

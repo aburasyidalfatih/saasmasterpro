@@ -3,15 +3,14 @@
  * Halaman login/register/forgot-password adalah milik platform,
  * bukan tenant, jadi tidak ikut tema tenant.
  */
+"use client";
+
+import { useEffect } from "react";
+
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
-  return (
-    <>
-      <script
-        dangerouslySetInnerHTML={{
-          __html: `document.documentElement.setAttribute("data-theme","aurora");`,
-        }}
-      />
-      {children}
-    </>
-  )
+  useEffect(() => {
+    document.documentElement.setAttribute("data-theme", "aurora");
+  }, []);
+
+  return <>{children}</>;
 }

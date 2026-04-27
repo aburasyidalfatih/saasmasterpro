@@ -3,7 +3,7 @@
 import { useSession, signOut } from "next-auth/react"
 import { useTheme } from "next-themes"
 import { usePathname } from "next/navigation"
-import { Bell, Moon, Sun, LogOut, User, Settings, Search, Home, ChevronRight } from "lucide-react"
+import { Bell, Moon, Sun, LogOut, User, Search, Home, ChevronRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -171,12 +171,6 @@ export function Header() {
               <Link href="/dashboard/settings" className="flex items-center gap-2 rounded-lg">
                 <User className="h-4 w-4" />
                 Profil
-              </Link>
-            </DropdownMenuItem>
-            <DropdownMenuItem asChild>
-              <Link href="/dashboard/settings" className="flex items-center gap-2 rounded-lg">
-                <Settings className="h-4 w-4" />
-                Pengaturan
               </Link>
             </DropdownMenuItem>
             <DropdownMenuSeparator />

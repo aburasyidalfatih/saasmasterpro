@@ -51,14 +51,24 @@ function memoryRateLimit(
   return { success: true, remaining: limit - entry.count }
 }
 
-// Cleanup stale entries every 60s
+// Safety: cap in-memory map size to prevent unbounded growth in serverless
+const MAX_MAP_SIZE = 10000
+
+// Cleanup stale entries every 60s — unref() so it doesn't prevent process exit
 if (typeof setInterval !== "undefined") {
-  setInterval(() => {
+  const cleanupTimer = setInterval(() => {
     const now = Date.now()
     for (const [key, entry] of memoryMap) {
       if (now > entry.resetAt) memoryMap.delete(key)
     }
+    // Emergency clear if map grows too large
+    if (memoryMap.size > MAX_MAP_SIZE) memoryMap.clear()
   }, 60000)
+
+  // Allow Node.js to exit naturally without waiting for this timer
+  if (typeof cleanupTimer === "object" && "unref" in cleanupTimer) {
+    cleanupTimer.unref()
+  }
 }
 
 // ==================== UNIFIED INTERFACE ====================

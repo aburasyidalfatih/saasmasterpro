@@ -7,6 +7,7 @@ import { parseBody } from "@/lib/api-utils"
 const profileSchema = z.object({
   name: z.string().min(2, "Nama minimal 2 karakter").max(100),
   phone: z.string().max(20).optional().nullable(),
+  avatar: z.string().max(500).optional().nullable(),
 })
 
 export async function PUT(req: Request) {
@@ -21,8 +22,9 @@ export async function PUT(req: Request) {
     data: {
       name: parsed.data.name,
       phone: parsed.data.phone || null,
+      avatar: parsed.data.avatar !== undefined ? (parsed.data.avatar || null) : undefined,
     },
   })
 
-  return NextResponse.json({ message: "Profil berhasil diperbarui", name: updated.name })
+  return NextResponse.json({ message: "Profil berhasil diperbarui", name: updated.name, avatar: updated.avatar })
 }
