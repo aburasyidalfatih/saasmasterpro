@@ -300,7 +300,12 @@ export function Sidebar({ isSuperAdmin }: SidebarProps) {
   // Detect role dari session
   const isSuperAdminPath = pathname.startsWith("/super-admin")
   const currentTenantSlug = session?.user?.tenants?.[0]?.slug
-  const currentRole = session?.user?.tenants?.find((t) => t.slug === currentTenantSlug)?.role || "member"
+  const currentTenant = session?.user?.tenants?.find((t) => t.slug === currentTenantSlug) || session?.user?.tenants?.[0]
+  const currentRole = currentTenant?.role || "member"
+
+  // Nama & inisial branding: nama tenant untuk dashboard, SaasMasterPro untuk super-admin
+  const brandName = isSuperAdminPath ? "SaasMasterPro" : (currentTenant?.name || "SaasMasterPro")
+  const brandInitial = brandName.charAt(0).toUpperCase()
 
   // Saat impersonate, super admin dianggap admin tenant
   const isImpersonating = typeof document !== "undefined" && document.cookie.includes("impersonate-tenant=")
@@ -356,10 +361,10 @@ export function Sidebar({ isSuperAdmin }: SidebarProps) {
                 "flex h-9 w-9 items-center justify-center rounded-xl text-white font-bold text-sm shadow-lg",
                 isSuperAdminPath ? "bg-gradient-to-br from-red-500 to-orange-500" : "btn-gradient"
               )}>
-                {isSuperAdminPath ? "⚡" : "S"}
+                {isSuperAdminPath ? "⚡" : brandInitial}
               </div>
-              <div className="flex flex-col">
-                <span className="font-bold text-sm tracking-tight leading-tight">SaasMasterPro</span>
+              <div className="flex flex-col min-w-0">
+                <span className="font-bold text-sm tracking-tight leading-tight truncate max-w-[140px]">{brandName}</span>
                 <span className={cn(
                   "text-[10px] font-medium leading-tight",
                   isSuperAdminPath ? "text-red-500" : "text-muted-foreground"
@@ -380,7 +385,7 @@ export function Sidebar({ isSuperAdmin }: SidebarProps) {
               isSuperAdminPath ? "bg-gradient-to-br from-red-500 to-orange-500" : "btn-gradient"
             )}
           >
-            {isSuperAdminPath ? "⚡" : "S"}
+            {isSuperAdminPath ? "⚡" : brandInitial}
           </button>
         )}
       </div>
