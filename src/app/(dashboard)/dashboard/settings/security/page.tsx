@@ -10,6 +10,63 @@ import { ConfirmDialog } from "@/components/shared/confirm-dialog"
 import { toast } from "@/hooks/use-toast"
 import { Lock, KeyRound, Smartphone, ShieldCheck, ShieldOff, Copy, Monitor, Trash2, Eye, EyeOff, Info, ExternalLink } from "lucide-react"
 
+function ChangePasswordForm() {
+  const [form, setForm] = useState({ current: "", new: "", confirm: "" })
+  const [loading, setLoading] = useState(false)
+
+  const handleSubmit = async () => {
+    if (!form.current || !form.new || !form.confirm) {
+      toast({ title: "Lengkapi form", description: "Semua field harus diisi.", variant: "destructive" })
+      return
+    }
+    if (form.new.length < 8) {
+      toast({ title: "Password terlalu pendek", description: "Password minimal 8 karakter.", variant: "destructive" })
+      return
+    }
+    if (form.new !== form.confirm) {
+      toast({ title: "Password tidak cocok", description: "Password baru dan konfirmasi tidak sama.", variant: "destructive" })
+      return
+    }
+    setLoading(true)
+    const res = await fetch("/api/user/change-password", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ currentPassword: form.current, newPassword: form.new }),
+    })
+    const data = await res.json()
+    setLoading(false)
+    if (res.ok) {
+      setForm({ current: "", new: "", confirm: "" })
+      toast({ title: "Password diubah", description: "Password Anda berhasil diperbarui." })
+    } else {
+      toast({ title: "Gagal", description: data.error || "Terjadi kesalahan.", variant: "destructive" })
+    }
+  }
+
+  return (
+    <>
+      <div className="space-y-2">
+        <Label>Password Saat Ini</Label>
+        <Input type="password" value={form.current} onChange={(e) => setForm({ ...form, current: e.target.value })}
+          placeholder="••••••••" className="rounded-xl" />
+      </div>
+      <div className="space-y-2">
+        <Label>Password Baru</Label>
+        <Input type="password" value={form.new} onChange={(e) => setForm({ ...form, new: e.target.value })}
+          placeholder="Minimal 8 karakter" className="rounded-xl" />
+      </div>
+      <div className="space-y-2">
+        <Label>Konfirmasi Password Baru</Label>
+        <Input type="password" value={form.confirm} onChange={(e) => setForm({ ...form, confirm: e.target.value })}
+          placeholder="Ulangi password baru" className="rounded-xl" />
+      </div>
+      <Button className="btn-gradient text-white border-0 rounded-xl w-full" onClick={handleSubmit} disabled={loading}>
+        {loading ? "Menyimpan..." : "Ubah Password"}
+      </Button>
+    </>
+  )
+}
+
 interface SessionRow {
   id: string
   deviceName: string | null
@@ -211,21 +268,7 @@ export default function SecurityPage() {
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="currentPassword">Password Saat Ini</Label>
-              <Input id="currentPassword" type="password" placeholder="••••••••" className="rounded-xl" />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="newPassword">Password Baru</Label>
-              <Input id="newPassword" type="password" placeholder="Minimal 8 karakter" className="rounded-xl" />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="confirmPassword">Konfirmasi Password Baru</Label>
-              <Input id="confirmPassword" type="password" placeholder="Ulangi password baru" className="rounded-xl" />
-            </div>
-            <Button className="btn-gradient text-white border-0 rounded-xl w-full">
-              Ubah Password
-            </Button>
+            <ChangePasswordForm />
           </CardContent>
         </Card>
 
